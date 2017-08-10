@@ -16,7 +16,7 @@ wmain(int argc, wchar_t **argv)
 #else
 
 int
-main(int argc, char **argv)
+python3_main(int argc, char **argv)
 {
     wchar_t **argv_copy;
     /* We need a second copy, as Python might modify the first one. */

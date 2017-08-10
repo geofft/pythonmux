@@ -6,6 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 
+int python3_main(int argc, char *argv[]);
+
 static const char *optstring = "+bBc:dEhiIJm:OqRsStuvVW:xX:?";
 static const struct option long_options[] = {
 	{"help", no_argument, NULL, 'h'},
@@ -22,7 +24,7 @@ struct version {
 };
 
 static const struct version versions[] = {
-	{3, 4}, {3, 3}, {3, 2}, {3, 1}, {3, 0},
+	{3, 5}, {3, 4}, {3, 3}, {3, 2}, {3, 1}, {3, 0},
 	{2, 7}, {2, 6},
 };
 
@@ -105,14 +107,17 @@ matches(int major, int minor, char *pyversions)
 }
 
 static void __attribute__((noreturn))
-exec_python(char *pyversions, char *argv[])
+exec_python(char *pyversions, int argc, char *argv[])
 {
 	unsigned i;
 	char *python = NULL;
 	if (!pyversions) {
 		pyversions = strdup("2.0+");
 	}
-	for (i = 0; i < sizeof(versions) / sizeof(*versions); i++) {
+	if (matches(versions[0].major, versions[0].minor, pyversions)) {
+		exit(python3_main(argc, argv));
+	}
+	for (i = 1; i < sizeof(versions) / sizeof(*versions); i++) {
 		asprintf(&python, "/usr/bin/python%d.%d",
 		         versions[i].major, versions[i].minor);
 		if (access(python, X_OK) == 0 &&
@@ -166,7 +171,7 @@ main(int argc, char *argv[])
 		}
 		/* If we can't open the file, just go with the default
 		 * (Python 2) */
-		exec_python(pyversions, argv);
+		exec_python(pyversions, argc, argv);
 	}
 
 	if (!interactive &&
@@ -183,20 +188,20 @@ main(int argc, char *argv[])
 
 	if (scripted_mode) {
 		if (ignore_environment) {
-			exec_python(NULL, argv);
+			exec_python(NULL, argc, argv);
 		} else {
 			char *pyversions = getenv("PYVERSIONS");
 			if (pyversions) {
-				exec_python(strdup(pyversions), argv);
+				exec_python(strdup(pyversions), argc, argv);
 			} else {
-				exec_python(NULL, argv);
+				exec_python(NULL, argc, argv);
 			}
 		}
 	}
 
 	if (interactive) {
-		exec_python(strdup("2.0+,3.0+"), argv);
+		exec_python(strdup("2.0+,3.0+"), argc, argv);
 	};
 
-	exec_python(find_pyversions(stdin), argv);
+	exec_python(find_pyversions(stdin), argc, argv);
 }
